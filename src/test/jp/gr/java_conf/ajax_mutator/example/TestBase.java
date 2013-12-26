@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxBinary;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -29,6 +30,8 @@ public class TestBase {
     private static WebDriver driver;
     private static WebDriverWait wait;
     private static boolean calcCoverage;
+    private static boolean runInBackground;
+    private static Process xvfbProcess;
 
     private static String[] jsCoverArgs = new String[]{
             "-ws",
@@ -39,8 +42,9 @@ public class TestBase {
             "--report-dir=" + COVERAGE_REPORT_DIR_PATH
     };
 
-    public TestBase(boolean calcCoverage) {
+    public TestBase(boolean calcCoverage, boolean runInBackground) {
         this.calcCoverage = calcCoverage;
+        this.runInBackground = runInBackground;
     }
 
     @Before
@@ -48,22 +52,34 @@ public class TestBase {
         if (driver != null) {
             return;
         }
-        if (calcCoverage) {
-            launchProxyToMeasureCoverage();
-        }
         driver = initDriver();
         driver.manage().timeouts().pageLoadTimeout(DEFAULT_WAIT_LIMIT_SEC, TimeUnit.SECONDS);
         wait = new WebDriverWait(driver, DEFAULT_WAIT_LIMIT_SEC);
     }
 
     static protected WebDriver initDriver() {
-        if (!calcCoverage) {
+        if (!calcCoverage && !runInBackground) {
             return new FirefoxDriver();
         }
-        Proxy proxy = new Proxy().setHttpProxy("localhost:3129");
+
+        FirefoxBinary firefoxBinary = new FirefoxBinary();
         DesiredCapabilities capabilities = new DesiredCapabilities();
-        capabilities.setCapability(CapabilityType.PROXY, proxy);
-        return new FirefoxDriver(capabilities);
+        if (calcCoverage) {
+            launchProxyToMeasureCoverage();
+            Proxy proxy = new Proxy().setHttpProxy("localhost:3129");
+            capabilities.setCapability(CapabilityType.PROXY, proxy);
+        }
+        if (runInBackground) {
+            Runtime runtime = Runtime.getRuntime();
+            try {
+                xvfbProcess = runtime.exec("Xvfb :3156 -screen 0 1024x768x24");
+            } catch (IOException e) {
+                throw new IllegalStateException("Fail to lanch Xvfb", e);
+            }
+            String Xport = System.getProperty("lmportal.xvfb.id", ":3156");
+            firefoxBinary.setEnvironmentProperty("DISPLAY", Xport);
+        }
+        return new FirefoxDriver(firefoxBinary, null, capabilities);
     }
 
     static private void launchProxyToMeasureCoverage() {
@@ -83,6 +99,9 @@ public class TestBase {
     static public void terminateBrowser() throws Exception {
         if (!calcCoverage) {
             driver.close();
+            if (runInBackground) {
+                xvfbProcess.destroy();
+            }
             return;
         }
         driver.get("http://localhost/jscoverage.html");
@@ -94,6 +113,10 @@ public class TestBase {
         driver.get("file:///" + new File(COVERAGE_REPORT_DIR_PATH + "/jscoverage.html")
                 .getAbsolutePath());
         printCoverage();
+        if (runInBackground) {
+            driver.close();
+            xvfbProcess.destroy();
+        }
     }
 
     private static void printCoverage() {
