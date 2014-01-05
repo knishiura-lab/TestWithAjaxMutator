@@ -4,42 +4,34 @@ import jscover.Main;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Proxy;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxBinary;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.remote.CapabilityType;
-import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import static org.openqa.selenium.support.ui.ExpectedConditions.elementToBeClickable;
 import static org.openqa.selenium.support.ui.ExpectedConditions.textToBePresentInElementLocated;
 
 /**
  * Base class for webdriver test cases that use JSCover to calculate coverage.
  * Note: this implementation use single WebDriver instance, i.e., test case cannot run in parallel.
  */
-public class TestBase {
-    private static final String COVERAGE_REPORT_DIR_PATH = "js-cover-report";
+public abstract class TestBase {
     private static final int DEFAULT_WAIT_LIMIT_SEC = 10;
-    private static Thread server;
     private static WebDriver driver;
     private static WebDriverWait wait;
     private static boolean calcCoverage;
     private static boolean runInBackground;
     private static Process xvfbProcess;
 
-    private static String[] jsCoverArgs = new String[]{
-            "-ws",
-            "--port=3129",
-            "--proxy",
-            "--local-storage",
-            "--no-instrument-reg=.*jquery.*",
-            "--report-dir=" + COVERAGE_REPORT_DIR_PATH
+    private final String[] JSCOVER_DEFAULT_ARGS = new String[]{
+            "-fs",
+            getOriginalFileRoot(),
+            getInstrumentedFileRoot()
     };
 
     public TestBase(boolean calcCoverage, boolean runInBackground) {
@@ -52,23 +44,35 @@ public class TestBase {
         if (driver != null) {
             return;
         }
+        if (calcCoverage) {
+            try {
+                String[] extraArgs = getExtraJsCoverArgs();
+                String[] args = Arrays.copyOf(
+                        JSCOVER_DEFAULT_ARGS, JSCOVER_DEFAULT_ARGS.length + extraArgs.length);
+                System.arraycopy(
+                        extraArgs, 0, args, JSCOVER_DEFAULT_ARGS.length, extraArgs.length);
+                System.out.println(args);
+                Main.main(args);
+            } catch (IOException e) {
+                throw new IllegalStateException(
+                        "Fail to create instrumented JS files to calculate coverage",
+                        e);
+            }
+        }
         driver = initDriver();
         driver.manage().timeouts().pageLoadTimeout(DEFAULT_WAIT_LIMIT_SEC, TimeUnit.SECONDS);
         wait = new WebDriverWait(driver, DEFAULT_WAIT_LIMIT_SEC);
+        if (calcCoverage) {
+            driver.get(getJsCoverageUrl());
+        }
     }
 
     static protected WebDriver initDriver() {
-        if (!calcCoverage && !runInBackground) {
+        if (!runInBackground) {
             return new FirefoxDriver();
         }
 
         FirefoxBinary firefoxBinary = new FirefoxBinary();
-        DesiredCapabilities capabilities = new DesiredCapabilities();
-        if (calcCoverage) {
-            launchProxyToMeasureCoverage();
-            Proxy proxy = new Proxy().setHttpProxy("localhost:3129");
-            capabilities.setCapability(CapabilityType.PROXY, proxy);
-        }
         if (runInBackground) {
             Runtime runtime = Runtime.getRuntime();
             try {
@@ -79,40 +83,17 @@ public class TestBase {
             String Xport = System.getProperty("lmportal.xvfb.id", ":3156");
             firefoxBinary.setEnvironmentProperty("DISPLAY", Xport);
         }
-        return new FirefoxDriver(firefoxBinary, null, capabilities);
-    }
-
-    static private void launchProxyToMeasureCoverage() {
-        server = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Main.main(jsCoverArgs);
-                } catch (IOException e) {
-                    throw new RuntimeException("Error while running jsCover proxy.", e);
-                }
-            }
-        });
-        server.start();
+        return new FirefoxDriver(firefoxBinary, null);
     }
 
     @AfterClass
     static public void terminateBrowser() throws Exception {
-        if (!calcCoverage) {
+        if (calcCoverage) {
+            driver.switchTo().window(driver.getWindowHandle());
+            printCoverage();
+        } else if (!runInBackground) {
             driver.close();
-            if (runInBackground) {
-                xvfbProcess.destroy();
-            }
-            return;
         }
-        driver.get("http://localhost/jscoverage.html");
-        driver.switchTo().window(driver.getWindowHandle());
-        wait.until(elementToBeClickable(By.id("storeTab"))).click();
-        Thread.sleep(1000);
-        wait.until(elementToBeClickable(By.id("storeButton"))).click();
-        wait.until(textToBePresentInElementLocated(By.id("storeDiv"), "Coverage data stored at"));
-        driver.get("file:///" + new File(COVERAGE_REPORT_DIR_PATH + "/jscoverage.html")
-                .getAbsolutePath());
-        printCoverage();
         if (runInBackground) {
             driver.close();
             xvfbProcess.destroy();
@@ -123,8 +104,52 @@ public class TestBase {
         driver.findElement(By.id("summaryTab")).click();
         wait.until(textToBePresentInElementLocated(By.id("summaryTotal"), "%"));
         System.out.println("Statement coverage: "
-                + driver.findElement(By.id("summaryTotal")).getText() + "%");
+                + driver.findElement(By.id("summaryTotal")).getText());
     }
+
+    protected void openUrl(String url) {
+        if (calcCoverage) {
+            driver.switchTo().window(driver.getWindowHandle());
+            WebElement location = driver.findElement(By.id("location"));
+            location.clear();
+            location.sendKeys(getInstrumentedUrl(url));
+            for (WebElement elm: driver.findElements(By.tagName("button"))) {
+                if (elm.getText().equals("Open in frame")) {
+                    elm.click();
+                    break;
+                }
+            }
+            driver.switchTo().frame("browserIframe");
+        } else {
+            driver.get(url);
+        }
+    }
+
+    /**
+     * @return path to the directory where test target JavaScript file exists.
+     */
+    protected abstract String getOriginalFileRoot();
+
+    /**
+     * @return path to the directory where instrumented JavaScript file should be generated to
+     * calculate coverage.
+     */
+    protected abstract String getInstrumentedFileRoot();
+
+    /**
+     * @return extra argument that passed to JSCover.
+     */
+    protected abstract String[] getExtraJsCoverArgs();
+
+    /**
+     * convert given url to it's instrumented version
+     */
+    protected abstract String getInstrumentedUrl(String url);
+
+    /**
+     * @return url of jscoverage.html
+     */
+    protected abstract String getJsCoverageUrl();
 
     protected static WebDriver getDriver() {
         return driver;
