@@ -1,5 +1,7 @@
 package jp.gr.java_conf.ajax_mutator.example;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import jscover.Main;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -12,6 +14,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.openqa.selenium.support.ui.ExpectedConditions.textToBePresentInElementLocated;
@@ -123,6 +126,22 @@ public abstract class TestBase {
         } else {
             driver.get(url);
         }
+    }
+
+    protected WebElement findElement(By by) {
+        return driver.findElement(by);
+    }
+
+    protected List<WebElement> findElements(By by) {
+        return driver.findElements(by);
+    }
+
+    protected <V> V waitUntil(Function<WebDriver, V> isTrue) {
+        return wait.until(isTrue);
+    }
+
+    protected void waitUntil(Predicate<WebDriver> isTrue) {
+        wait.until(isTrue);
     }
 
     /**
