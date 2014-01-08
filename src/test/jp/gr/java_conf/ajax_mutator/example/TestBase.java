@@ -101,6 +101,7 @@ public abstract class TestBase {
             driver.close();
             xvfbProcess.destroy();
         }
+        driver = null;
     }
 
     private static void printCoverage() {
