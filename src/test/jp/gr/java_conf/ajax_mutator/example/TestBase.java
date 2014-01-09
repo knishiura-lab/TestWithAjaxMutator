@@ -33,6 +33,7 @@ public abstract class TestBase {
 
     private final String[] JSCOVER_DEFAULT_ARGS = new String[]{
             "-fs",
+            "--exclude=.git",
             getOriginalFileRoot(),
             getInstrumentedFileRoot()
     };
