@@ -2,3 +2,6 @@
 target
 *.iml
 *~
+report*/
+js-cover-report
+jscover.log
