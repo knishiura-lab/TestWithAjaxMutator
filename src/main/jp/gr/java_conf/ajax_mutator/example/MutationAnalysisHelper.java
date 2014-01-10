@@ -98,6 +98,7 @@ public class MutationAnalysisHelper {
     private MutationTestConductor getMutationTestManager(String pathToJsFile) {
         MutationTestConductor conductor = new MutationTestConductor();
         conductor.setup(pathToJsFile, "http://ajax_mutator.java_conf.gr.jp", visitor);
+        conductor.setSaveInformationInterval(2);
         return conductor;
     }
 }
