@@ -5,6 +5,7 @@ import jp.gr.java_conf.daisy.ajax_mutator.JUnitExecutor;
 import jp.gr.java_conf.daisy.ajax_mutator.MutateVisitor;
 import jp.gr.java_conf.daisy.ajax_mutator.MutateVisitorBuilder;
 import jp.gr.java_conf.daisy.ajax_mutator.MutationTestConductor;
+import jp.gr.java_conf.daisy.ajax_mutator.mutation_viewer.MutationViewer;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.DOMSelectionSelectNearbyMutator;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.FakeBlankResponseBodyMutator;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.Mutator;
@@ -77,6 +78,17 @@ public class MutationAnalysisHelper {
 
         MutationTestConductor conductor = getMutationTestManager(pathToJsFile);
         conductor.mutationAnalysisUsingExistingMutations(new JUnitExecutor(testClass));
+    }
+
+    public void launchMutationViewer(final String mutantsDir, final String baseDir) {
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                javafx.application.Application.launch(
+                        MutationViewer.class, "--mutants_dir=" + mutantsDir, "--base_dir=" + baseDir);
+            }
+        }.start();
     }
 
     private boolean isMutationFileExists(File jsFile) {
