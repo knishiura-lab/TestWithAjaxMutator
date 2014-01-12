@@ -24,7 +24,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.textToBePresentI
  * Note: this implementation use single WebDriver instance, i.e., test case cannot run in parallel.
  */
 public abstract class TestBase {
-    private static final int DEFAULT_WAIT_LIMIT_SEC = 10;
+    private static final int DEFAULT_WAIT_LIMIT_SEC = 5;
     private static WebDriver driver;
     private static WebDriverWait wait;
     private static boolean calcCoverage;
@@ -127,6 +127,13 @@ public abstract class TestBase {
             driver.switchTo().frame("browserIframe");
         } else {
             driver.get(url);
+        }
+    }
+
+    protected void backToRootFrame() {
+        driver.switchTo().window(driver.getWindowHandle());
+        if (calcCoverage) {
+            driver.switchTo().frame("browserIframe");
         }
     }
 
