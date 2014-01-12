@@ -77,7 +77,7 @@ public class MutationAnalysisHelper {
         }
 
         MutationTestConductor conductor = getMutationTestManager(pathToJsFile);
-        conductor.mutationAnalysisUsingExistingMutations(new JUnitExecutor(testClass));
+        conductor.mutationAnalysisUsingExistingMutations(new JUnitExecutor(false, testClass));
     }
 
     public void launchMutationViewer(final String mutantsDir, final String baseDir) {
