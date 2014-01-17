@@ -83,6 +83,21 @@ public class MutationAnalysisHelper {
         conductor.mutationAnalysisUsingExistingMutations(new JUnitExecutor(false, testClass));
     }
 
+    /**
+     */
+    public void runTestForSpecificMutant(String pathToJsFile, String mutantFileName, Class<?> testClass) {
+        File jsFile = new File(pathToJsFile);
+        if (!jsFile.exists()) {
+            throw new IllegalStateException("Invalid path: " + pathToJsFile);
+        }
+        if (!isMutationFileExists(jsFile)) {
+            generateMutations(pathToJsFile, false);
+        }
+
+        MutationTestConductor conductor = getMutationTestManager(pathToJsFile);
+        conductor.tryToKillSpecificMutant(mutantFileName,new JUnitExecutor(false, testClass));
+    }
+
     public void launchMutationViewer(final String mutantsDir, final String baseDir) {
         new Thread() {
             @Override
