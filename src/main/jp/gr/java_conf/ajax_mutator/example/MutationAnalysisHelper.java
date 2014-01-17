@@ -1,22 +1,23 @@
 package jp.gr.java_conf.ajax_mutator.example;
 
 import com.google.common.collect.ImmutableSet;
+
 import jp.gr.java_conf.daisy.ajax_mutator.JUnitExecutor;
 import jp.gr.java_conf.daisy.ajax_mutator.MutateVisitor;
 import jp.gr.java_conf.daisy.ajax_mutator.MutateVisitorBuilder;
 import jp.gr.java_conf.daisy.ajax_mutator.MutationTestConductor;
 import jp.gr.java_conf.daisy.ajax_mutator.mutation_viewer.MutationViewer;
-import jp.gr.java_conf.daisy.ajax_mutator.mutator.DOMSelectionSelectNearbyMutator;
-import jp.gr.java_conf.daisy.ajax_mutator.mutator.FakeBlankResponseBodyMutator;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.*;
-import jp.gr.java_conf.daisy.ajax_mutator.mutator.ReplacingAjaxCallbackMutator;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.replacing_among.*;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.replacing_to_no_op.*;
-import jp.gr.java_conf.daisy.ajax_mutator.mutator.replacing_to_no_op.DOMRemovalToNoOpMutator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -109,6 +110,38 @@ public class MutationAnalysisHelper {
         }.start();
     }
 
+    /**
+     * Meature test's fault finding capability (only used by authors)
+     */
+    public void measureTestPerformance(String jsDirPath, Class<?> testClass, int startIndex, int endIndex) {
+        int numOfKilled = 0;
+        File directory = new File(jsDirPath);
+        if (!directory.exists() || !directory.isDirectory()) {
+            throw new IllegalStateException("");
+        }
+        StringBuilder resultStrBuilder = new StringBuilder();
+        JUnitExecutor executor = new JUnitExecutor(false, testClass);
+        for (int i = startIndex; i <= endIndex; i++) {
+            try {
+                Runtime.getRuntime().exec("git checkout fault" + i, null, directory);
+            } catch (IOException e) {
+                System.err.println("Error at " + i);
+                System.err.println(e);
+                return;
+            }
+            resetState();
+            boolean result = executor.execute();
+            if (!result) {
+                numOfKilled++;
+            }
+            resultStrBuilder.append(result ? 'x' : 'o').append(",");
+            System.out.println((result ? "success" : "fail") + " at index " + i);
+        }
+        System.out.println(resultStrBuilder.toString());
+        System.out.println(numOfKilled + " | " + (endIndex - startIndex + 1) + " | "
+                + (numOfKilled * 1.0 / (endIndex - startIndex + 1)));
+    }
+
     private boolean isMutationFileExists(File jsFile) {
         File[] siblings = jsFile.getParentFile().listFiles();
         for (File sibling: siblings) {
@@ -117,6 +150,13 @@ public class MutationAnalysisHelper {
             }
         }
         return false;
+    }
+
+    /**
+     * Method for reset state of the SUT such as DB or session reset. Subclass can override this 
+     * method.  Default implementation is do nothing.
+     */
+    protected void resetState() {
     }
 
     private MutateVisitor initVisitor() {
