@@ -8,10 +8,10 @@ import jp.gr.java_conf.daisy.ajax_mutator.MutationTestConductor;
 import jp.gr.java_conf.daisy.ajax_mutator.mutation_viewer.MutationViewer;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.DOMSelectionSelectNearbyMutator;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.FakeBlankResponseBodyMutator;
-import jp.gr.java_conf.daisy.ajax_mutator.mutator.Mutator;
+import jp.gr.java_conf.daisy.ajax_mutator.mutator.*;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.ReplacingAjaxCallbackMutator;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.replacing_among.*;
-import jp.gr.java_conf.daisy.ajax_mutator.mutator.replacing_to_no_op.DOMCreationToNoOpMutator;
+import jp.gr.java_conf.daisy.ajax_mutator.mutator.replacing_to_no_op.*;
 import jp.gr.java_conf.daisy.ajax_mutator.mutator.replacing_to_no_op.DOMRemovalToNoOpMutator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +55,9 @@ public class MutationAnalysisHelper {
                 new DOMSelectionSelectNearbyMutator(),
                 new DOMCreationToNoOpMutator(),
                 new DOMRemovalToNoOpMutator(),
+                new DOMReplacementSrcTargetMutator(),
+                new DOMCloningToNoOpMutator(),
+                new DOMNormalizationToNoOpMutator(),
 
                 new FakeBlankResponseBodyMutator(),
                 new ReplacingAjaxCallbackMutator(),
