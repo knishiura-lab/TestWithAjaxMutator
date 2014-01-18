@@ -1,20 +1,7 @@
 package jp.gr.java_conf.ajax_mutator.example;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import org.junit.Test;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import jp.gr.java_conf.ajax_mutator.example.TestBase;
-
-import static junit.framework.Assert.assertEquals;
 
 public class MemoryGameTest extends TestBase {
     public MemoryGameTest() {
@@ -24,10 +11,48 @@ public class MemoryGameTest extends TestBase {
     }
 
     @Test
-    public void testSomething() {
+    public void testSomething() throws InterruptedException {
         // Please implement here
         openUrl("http://localhost/ex/p3.monkeyaround.biz/index.php");
         // Please implement here
+        Thread.sleep(3000);
+        findElements(By.className("ui-button")).get(6).click();
+        Thread.sleep(3000);
+        findElements(By.className("ui-button")).get(6).click();//you have to test another button later
+        Thread.sleep(3000);
+        findElement(By.id("start_stop")).click();
+        findElement(By.id("imageKeywords")).sendKeys("computer");
+        Thread.sleep(1000);
+        findElement(By.id("loadUserImages")).click();
+        Thread.sleep(15000);
+        findElement(By.id("cheat")).click();
+        for(int i=0;i<20;i++){
+            for(int j=i+1;j<20;j++){
+                findElement(By.id("box_"+ i)).click();
+                findElement(By.id("box_"+ j)).click();
+            }
+        }
+        Thread.sleep(10000);
+        findElements(By.className("ui-button")).get(1).click();
+        Thread.sleep(4000);
+    }
+
+    @Test
+    public void testSomething2() throws InterruptedException {
+        // Please implement here
+        openUrl("http://localhost/ex/p3.monkeyaround.biz/index.php");
+        // Please implement here
+        Thread.sleep(3000);
+        findElements(By.className("ui-button")).get(6).click();
+        Thread.sleep(3000);
+        findElements(By.className("ui-button")).get(5).click();//you have to test another button later
+        Thread.sleep(3000);
+        findElement(By.id("start_stop")).click();
+        Thread.sleep(20000);
+        findElement(By.id("imageKeywords")).sendKeys("monkey");
+        Thread.sleep(1000);
+        findElement(By.id("loadUserImages")).click();
+        findElement(By.id("start_stop")).click();
     }
 
     @Override
