@@ -11,10 +11,8 @@ public class MemoryGameTest extends TestBase {
     }
 
     @Test
-    public void testSomething() throws InterruptedException {
-        // Please implement here
+    public void testPlayingGame() throws InterruptedException {
         openUrl("http://localhost/ex/p3.monkeyaround.biz/index.php");
-        // Please implement here
         Thread.sleep(3000);
         findElements(By.className("ui-button")).get(6).click();
         Thread.sleep(3000);
@@ -38,10 +36,8 @@ public class MemoryGameTest extends TestBase {
     }
 
     @Test
-    public void testSomething2() throws InterruptedException {
-        // Please implement here
+    public void testWithAudio() throws InterruptedException {
         openUrl("http://localhost/ex/p3.monkeyaround.biz/index.php");
-        // Please implement here
         Thread.sleep(3000);
         findElements(By.className("ui-button")).get(6).click();
         Thread.sleep(3000);
@@ -52,7 +48,14 @@ public class MemoryGameTest extends TestBase {
         findElement(By.id("imageKeywords")).sendKeys("monkey");
         Thread.sleep(1000);
         findElement(By.id("loadUserImages")).click();
+        Thread.sleep(1000);
         findElement(By.id("start_stop")).click();
+        Thread.sleep(3000);
+        findElement(By.id("start_stop")).click();
+        Thread.sleep(20000);
+        findElement(By.id("imageKeywords")).sendKeys("htsjsrtjsrtjsrtjshjstrjsytjsrts");
+        Thread.sleep(1000);
+        findElement(By.id("loadUserImages")).click();
     }
 
     @Override
