@@ -1,8 +1,10 @@
 package jp.gr.java_conf.ajax_mutator.example;
 
+import junit.framework.Assert;
 import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.util.List;
@@ -13,10 +15,36 @@ public class MediaWikiBookCreatorTest extends TestBase {
     }
 
     @Test
-    public void testSomething() {
+    public void testSomething() throws Exception {
         openUrl("http://localhost/ex/mediawiki/index.php/Main_Page");
         handleLogin();
         handleStart();
+        // please implement here
+        waitUntil(ExpectedConditions.presenceOfElementLocated(By.id("siteNotice")));
+        findElement(By.id("coll-add_article")).click();
+        Actions action = new Actions(getDriver());
+        action.moveToElement(findElement(By.id("mw-content-text")).findElements(By.tagName("ul")).get(1).findElement(By.tagName("li")).findElement(By.tagName("a")));
+//        action.pause(1);
+        action.moveToElement(findElement(By.id("siteNotice")));
+        action.pause(1000);
+        action.moveToElement(findElement(By.id("mw-content-text")).findElements(By.tagName("ul")).get(1).findElement(By.tagName("li")).findElement(By.tagName("a")));
+        action.pause(1000);
+        action.perform();
+        Thread.sleep(1000);
+        Actions action2 = new Actions(getDriver());
+        action2.moveToElement(findElement(By.id("mw-content-text")).findElements(By.tagName("ul")).get(1).findElements(By.tagName("li")).get(4).findElement(By.tagName("a")));
+        action2.pause(1000);
+        action2.perform();
+        Thread.sleep(1000);
+        action.moveToElement(findElement(By.id("mw-content-text")).findElements(By.tagName("ul")).get(1).findElement(By.tagName("li")).findElement(By.tagName("a")));
+        action.pause(1000);
+        action.perform();
+        Thread.sleep(1000);
+//        findElement(By.id("mw-content-text")).findElements(By.tagName("ul")).get(1).findElement(By.tagName("li")).findElements(By.tagName("a")).get(1).click();
+        findElement(By.id("collectionpopup")).findElement(By.tagName("a")).click();
+        Thread.sleep(1000);
+        System.out.println(findElements(By.className("collection-creatorbox-iconlink")).get(0).getText());
+        Assert.assertTrue(findElements(By.className("collection-creatorbox-iconlink")).get(0).getText().equals(" Show book (2 pages)"));
     }
 
     /**
