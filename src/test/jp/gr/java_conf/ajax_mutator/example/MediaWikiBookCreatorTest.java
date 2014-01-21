@@ -1,8 +1,10 @@
 package jp.gr.java_conf.ajax_mutator.example;
 
-import junit.framework.Assert;
+import com.google.common.base.Predicate;
+import org.junit.Assert;
 import org.junit.Test;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -24,11 +26,27 @@ public class MediaWikiBookCreatorTest extends TestBase {
         findElement(By.id("coll-add_article")).click();
         Actions action = new Actions(getDriver());
         action.moveToElement(findElement(By.id("mw-content-text")).findElements(By.tagName("ul")).get(1).findElement(By.tagName("li")).findElement(By.tagName("a")));
-//        action.pause(1);
+        action.pause(1000);
+        action.moveToElement(findElement(By.id("collectionpopup")).findElement(By.tagName("a")));
+        action.pause(1000);
+        action.perform();
+        Thread.sleep(1000);
+        Assert.assertTrue(findElements(By.className("collection-creatorbox-iconlink")).get(0).getText().equals(" Show book (1 page)"));
+
         action.moveToElement(findElement(By.id("siteNotice")));
         action.pause(1000);
+        action.perform();
+        waitUntil(new Predicate<WebDriver>() {
+            @Override
+            public boolean apply(WebDriver webDriver) {
+                return !findElement(By.id("collectionpopup")).isDisplayed();
+            }
+        });
+        Thread.sleep(1000);
+        action = new Actions(getDriver());
         action.moveToElement(findElement(By.id("mw-content-text")).findElements(By.tagName("ul")).get(1).findElement(By.tagName("li")).findElement(By.tagName("a")));
         action.pause(1000);
+
         action.perform();
         Thread.sleep(1000);
         Actions action2 = new Actions(getDriver());
@@ -45,6 +63,12 @@ public class MediaWikiBookCreatorTest extends TestBase {
         Thread.sleep(1000);
         System.out.println(findElements(By.className("collection-creatorbox-iconlink")).get(0).getText());
         Assert.assertTrue(findElements(By.className("collection-creatorbox-iconlink")).get(0).getText().equals(" Show book (2 pages)"));
+        waitUntil(new Predicate<WebDriver>() {
+            @Override
+            public boolean apply(WebDriver webDriver) {
+                return (findElement(By.id("collectionpopup")).findElements(By.tagName("img")).size()!=0);
+            }
+        });
     }
 
     /**
