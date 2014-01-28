@@ -2,6 +2,7 @@ package jp.gr.java_conf.ajax_mutator.example;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+
 import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -13,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.gr.java_conf.ajax_mutator.example.TestBase;
-
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class MemoryGameTest extends TestBase {
     public MemoryGameTest() {
@@ -25,9 +26,115 @@ public class MemoryGameTest extends TestBase {
 
     @Test
     public void testSomething() {
-        // Please implement here
         openUrl("http://localhost/ex/p3.monkeyaround.biz/index.php");
-        // Please implement here
+        
+        waitUntil(ExpectedConditions.visibilityOfAllElementsLocatedBy(By.id("instructions")));
+        TimeOut(1200); // Wait for animation
+        findElement(By.xpath("/html/body/div[10]/div[3]/div/button")).click();
+        //TimeOut(5);
+        waitUntil(ExpectedConditions.visibilityOf(findElement(By.id("musicConfirmation"))));
+        TimeOut(1200); // Wait for animation
+        findElement(By.xpath("/html/body/div[10]/div[3]/div/button")).click();
+        
+        // Use existing image keyword
+        findElement(By.id("imageKeywords")).sendKeys("rats");
+        TimeOut(600); // Wait for validation
+        
+        // Find custom images
+        findElement(By.id("imageKeywords")).sendKeys(" and bears");
+        WebElement imgSearchBtn = findElement(By.id("loadUserImages"));
+        waitUntil(ExpectedConditions.visibilityOf(imgSearchBtn));
+        imgSearchBtn.click();
+        
+        WebElement startStop = findElement(By.id("start_stop"));
+        waitUntil(ExpectedConditions.visibilityOf(startStop));
+        startStop.click();
+        
+        /*waitUntil(ExpectedConditions.elementToBeClickable(startStop));
+        startStop.click();
+        WebElement status = findElement(By.id("status"));
+        waitUntil(ExpectedConditions.textToBePresentInElement(status, "Game stopped!"));
+        TimeOut(3000);
+        
+        startStop.click()*/
+        
+        final int numOfBoxes = 20;
+        waitUntil(new Predicate<WebDriver>() {
+        	@Override
+        	public boolean apply(WebDriver driver) {
+        		return driver.findElements(By.className("box")).size() == numOfBoxes;
+        	}
+        });
+        ImageBox[] boxes = new ImageBox[numOfBoxes];
+        List<WebElement> boxElms = findElements(By.className("box"));
+
+        for(int i = 0; i < 20; i++) {
+        	WebElement box = boxElms.get(i);
+        	boxes[i] = new ImageBox(box, box.getCssValue("background-image"));
+        }
+        
+        // Fetch corresponding images
+        ImageBox target = boxes[0];
+        ImageBox corresponding = null;
+        ImageBox wrong = null;
+    	for(int i = 1; i < numOfBoxes; i++) {
+    		String cur = boxes[i].getImageUrl();
+    		String tar = target.getImageUrl();
+    		if(boxes[i].getImageUrl().equals(target.getImageUrl())) {
+    			corresponding = boxes[i];
+    			
+    			if(i == numOfBoxes - 1)
+    				wrong = boxes[i--];
+    			else
+    				wrong = boxes[i++];
+    			break;
+    		}
+    	}
+    	assertNotNull(corresponding);
+        
+        TimeOut(12000); // Wait for countdown to finish
+        
+        // Select wrong image combination
+        target.getWebElement().click();
+        wrong.getWebElement().click();
+        
+        TimeOut(600); // Wait for fade logic
+        
+        // Select right image combination
+        target.getWebElement().click();
+        corresponding.getWebElement().click();
+        TimeOut(2000);
+        
+        // Cheat
+        findElement(By.id("cheat")).click();
+        
+        // Win game
+        for(int i = 0; i < numOfBoxes; i++) {
+        	ImageBox tar = boxes[i];
+        	ImageBox corr = null;
+        	while(corr == null) {
+	        	for(int j = 0; j < numOfBoxes; j++) {
+	        		if(i != j) {
+	        			if(tar.getImageUrl().equals(boxes[j].getImageUrl())) {
+	        				corr = boxes[j];
+	        			}
+	        		}
+	        	}
+        	}
+        	tar.getWebElement().click();
+        	corr.getWebElement().click();
+        	TimeOut(700);
+        }
+        
+        
+        
+    }
+    
+    private void TimeOut(int ms) {
+    	try {
+    		Thread.sleep(ms);
+    	}
+    	catch(Exception ex) {}
     }
 
     @Override
