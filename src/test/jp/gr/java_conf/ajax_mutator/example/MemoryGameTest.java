@@ -45,6 +45,8 @@ public class MemoryGameTest extends TestBase {
         WebElement imgSearchBtn = findElement(By.id("loadUserImages"));
         waitUntil(ExpectedConditions.visibilityOf(imgSearchBtn));
         imgSearchBtn.click();
+        String statusText = findElement(By.id("status")).getText();
+        assertEquals(true, statusText.contains("Searching images..."));
         
         WebElement startStop = findElement(By.id("start_stop"));
         waitUntil(ExpectedConditions.visibilityOf(startStop));
@@ -84,9 +86,9 @@ public class MemoryGameTest extends TestBase {
     			corresponding = boxes[i];
     			
     			if(i == numOfBoxes - 1)
-    				wrong = boxes[i--];
+    				wrong = boxes[--i];
     			else
-    				wrong = boxes[i++];
+    				wrong = boxes[++i];
     			break;
     		}
     	}
@@ -96,9 +98,10 @@ public class MemoryGameTest extends TestBase {
         
         // Select wrong image combination
         target.getWebElement().click();
-        wrong.getWebElement().click();
-        
-        TimeOut(600); // Wait for fade logic
+        wrong.getWebElement().click();        
+        TimeOut(1000); // Wait for fade logic
+        assertEquals("none", target.getWebElement().getCssValue("background-image"));
+        assertEquals("none", wrong.getWebElement().getCssValue("background-image"));
         
         // Select right image combination
         target.getWebElement().click();
@@ -107,6 +110,14 @@ public class MemoryGameTest extends TestBase {
         
         // Cheat
         findElement(By.id("cheat")).click();
+        for(int i = 0; i < numOfBoxes; i++) {
+        	assertNotSame("none", boxes[i].getWebElement().getCssValue("background-image"));
+        }
+        TimeOut(2000);
+        for(int i = 0; i < numOfBoxes; i++) {
+        	assertEquals("none", boxes[i].getWebElement().getCssValue("background-image"));
+        }
+        
         
         // Win game
         for(int i = 0; i < numOfBoxes; i++) {
@@ -122,8 +133,10 @@ public class MemoryGameTest extends TestBase {
 	        	}
         	}
         	tar.getWebElement().click();
-        	corr.getWebElement().click();
+        	corr.getWebElement().click();        	
         	TimeOut(700);
+        	assertNotSame("none", tar.getWebElement().getCssValue("background-image"));
+        	assertNotSame("none", corr.getWebElement().getCssValue("background-image"));
         }
         
         
@@ -161,4 +174,31 @@ public class MemoryGameTest extends TestBase {
     protected String getJsCoverageUrl() {
         return "http://localhost/ex/js-cover/instrumented/p3.monkeyaround.biz/jscoverage.html";
     }
+    
+    public static class ImageBox {
+    	private WebElement _webElement;
+    	private String _imageUrl;
+    	
+    	public ImageBox(WebElement webElement, String imageUrl) { 
+    		_webElement = webElement;
+    		_imageUrl = imageUrl;
+    	}
+    	
+    	public WebElement getWebElement() {
+    		return _webElement;
+    	}
+    	
+    	public String getImageUrl() {
+    		return _imageUrl;
+    	}
+    	
+    	public void setWebElement(WebElement webElement) {
+    		_webElement = webElement;
+    	}
+    	
+    	public void setImageUrl(String imageUrl) {
+    		_imageUrl = imageUrl;
+    	}
+    }
+
 }
