@@ -16,6 +16,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import com.google.common.base.Predicate;
+import org.openqa.selenium.interactions.Actions;
 
 public class WpWidgetCustomizerTest extends TestBase {
 	private List<WebElement> menus;
@@ -50,11 +51,55 @@ public class WpWidgetCustomizerTest extends TestBase {
 		WebElement text = findDisplayedElement(findElements(By
 				.className("widefat")));
 		assertNotNull(text);
-		
+
 		closeLastWidget(menu);
-		text = findDisplayedElement(findElements(By
-				.className("widefat")));
+		text = findDisplayedElement(findElements(By.className("widefat")));
 		assertNull(text);
+
+		checkUnmodified();
+	}
+
+
+	@Test
+	public void reorderWidgetsInSidebar() throws Exception {
+
+		getDriver().switchTo().frame(findElement(By.tagName("iframe")));
+		String firstWidgetTitle = findElement(By.className("widget-title"))
+				.getText();
+
+		before();
+		WebElement menu = openMenu(1);
+		List<WebElement> widgets = getWidgets(menu);
+		String firstText = widgets.get(0).getText();
+		(new Actions(getDriver())).dragAndDrop(widgets.get(0),
+				widgets.get(widgets.size() - 1)).perform();
+		sleep(2);
+
+		checkModified();
+		widgets = getWidgets(menu);
+		assertEquals(firstText, widgets.get(widgets.size() - 2).getText());
+
+		getDriver().switchTo().frame(findElement(By.tagName("iframe")));
+		String firstWidgetTitleInPreview = findElement(
+				By.className("widget-title")).getText();
+		assertFalse(firstWidgetTitle.equals(firstWidgetTitleInPreview));
+
+		before();
+		menu = openMenu(1);
+		widgets = getWidgets(menu);
+		firstText = widgets.get(0).getText();
+		(new Actions(getDriver())).dragAndDrop(widgets.get(0),
+				widgets.get(widgets.size() - 1)).perform();
+		sleep(2);
+
+		save();
+		widgets = getWidgets(menu);
+		assertEquals(firstText, widgets.get(widgets.size() - 2).getText());
+		checkUnmodified();
+
+		getDriver().switchTo().frame(findElement(By.tagName("iframe")));
+		assertEquals(firstWidgetTitleInPreview,
+				findElement(By.className("widget-title")).getText());
 	}
 
 	@Test
@@ -75,8 +120,31 @@ public class WpWidgetCustomizerTest extends TestBase {
 	public void changeFooterArchive() throws InterruptedException {
 		WebElement menu = openMenu(0);
 		openLastWidget(menu);
-		Thread.sleep(1000);
+		sleep();
 		setUniqueText();
+	}
+
+	private void sleep(int times) throws InterruptedException {
+		Thread.sleep(700 * times);
+	}
+
+	private void sleep() throws InterruptedException {
+		Thread.sleep(700);
+	}
+
+	private List<WebElement> getWidgets(WebElement menu) {
+		return menu.findElements(By.className("customize-control-widget_form"));
+	}
+
+	private void checkUnmodified() {
+		assertEquals("Saved", findElement(By.id("save")).getAttribute("value"));
+		assertEquals("Close", findElement(By.className("back")).getText());
+	}
+
+	private void checkModified() {
+		assertEquals("Save & Publish",
+				findElement(By.id("save")).getAttribute("value"));
+		assertEquals("Cancel", findElement(By.className("back")).getText());
 	}
 
 	private void removeLastWidget(int menuIndex, String uniqueString)
@@ -86,16 +154,29 @@ public class WpWidgetCustomizerTest extends TestBase {
 		ArrayList<WebElement> removes = findDisplayedElements(findElements(By
 				.className("widget-control-remove")));
 		removes.get(removes.size() - 1).click();
-		Thread.sleep(1000);
+		sleep();
 		assertTextNotExistence(uniqueString);
 	}
 
 	private String addArchive(int menuIndex) throws InterruptedException {
 		WebElement menu = openMenu(menuIndex);
 		menu.findElement(By.className("add-new-widget")).click();
-		Thread.sleep(1000);
+		sleep();
+		WebElement finder = findElement(By.id("available-widgets-filter"))
+				.findElement(By.tagName("input"));
+		finder.sendKeys("arc");
+		sleep();
+
+		ArrayList<WebElement> candidateWidgets = findDisplayedElements(findElement(
+				By.id("available-widgets")).findElements(
+				By.className("widget-tpl")));
+		assertEquals(2, candidateWidgets.size());
+
 		findElement(By.id("widget-1_archives-__i__")).click();
-		Thread.sleep(1000);
+		sleep();
+		List<WebElement> items = menu.findElements(By.tagName("li"));
+		assertEquals("customize-control customize-control-sidebar_widgets",
+				items.get(items.size() - 1).getAttribute("class"));
 		return setUniqueText();
 	}
 
@@ -104,14 +185,13 @@ public class WpWidgetCustomizerTest extends TestBase {
 				.className("widefat")));
 		String uniqueString = getUniqueString();
 		setText(text, uniqueString);
-		save();
+		updateAndSave();
 		assertTextExistence(uniqueString);
 		return uniqueString;
 	}
 
-	private void openLastWidget(WebElement menu) {
-		List<WebElement> widgets = menu.findElements(By
-				.className("customize-control-widget_form"));
+	private void openLastWidget(WebElement menu) throws InterruptedException {
+		List<WebElement> widgets = getWidgets(menu);
 		WebElement widget = widgets.get(widgets.size() - 1);
 		WebElement widgetTitle = widget.findElement(By
 				.className("widget-title"));
@@ -119,19 +199,19 @@ public class WpWidgetCustomizerTest extends TestBase {
 		waitUntil(ExpectedConditions.visibilityOf(widget.findElement(By.className("widget-control-save"))));
 	}
 
-	private void closeLastWidget(WebElement menu) {
-		List<WebElement> widgets = menu.findElements(By
-				.className("customize-control-widget_form"));
+	private void closeLastWidget(WebElement menu) throws InterruptedException {
+		List<WebElement> widgets = getWidgets(menu);
 		WebElement widget = widgets.get(widgets.size() - 1);
 		WebElement closeButton = widget.findElement(By
 				.className("widget-control-close"));
 		closeButton.click();
+		sleep();
 	}
 
 	private WebElement openMenu(int menuIndex) throws InterruptedException {
 		WebElement menu = menus.get(menuIndex);
 		menu.findElement(By.tagName("h3")).click();
-		Thread.sleep(1000);
+		sleep();
 		return menu;
 	}
 
@@ -155,13 +235,19 @@ public class WpWidgetCustomizerTest extends TestBase {
 		return list;
 	}
 
-	private void save() throws InterruptedException {
+	private void updateAndSave() throws InterruptedException {
 		List<WebElement> updates = findElements(By.name("savewidget"));
 		WebElement update = findDisplayedElement(updates);
 		update.click();
-		Thread.sleep(1000);
+		sleep();
+		save();
+	}
+
+	private void save() throws InterruptedException {
+		checkModified();
 		findElement(By.id("save")).click();
-		Thread.sleep(1000);
+		sleep();
+		checkUnmodified();
 	}
 
 	private void setText(WebElement input, String text)
@@ -170,7 +256,7 @@ public class WpWidgetCustomizerTest extends TestBase {
 			input.sendKeys(Keys.BACK_SPACE);
 		}
 		input.sendKeys(text);
-		Thread.sleep(1000);
+		sleep();
 	}
 
 	private String getUniqueString() {
@@ -181,7 +267,7 @@ public class WpWidgetCustomizerTest extends TestBase {
 
 	private void assertTextExistence(String text) throws InterruptedException {
 		getDriver().switchTo().frame(findElement(By.tagName("iframe")));
-		Thread.sleep(1000);
+		sleep();
 		String bodyText = findElement(By.tagName("body")).getText();
 		assertTrue("Text not found!", bodyText.contains(text));
 	}
@@ -189,7 +275,7 @@ public class WpWidgetCustomizerTest extends TestBase {
 	private void assertTextNotExistence(String text)
 			throws InterruptedException {
 		getDriver().switchTo().frame(findElement(By.tagName("iframe")));
-		Thread.sleep(1000);
+		sleep();
 		String bodyText = findElement(By.tagName("body")).getText();
 		assertFalse("Text found!", bodyText.contains(text));
 	}
